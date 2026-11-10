@@ -23,3 +23,9 @@ Thumbs.db
 hs_err_pid*
 replay_pid*
 .env
+
+# Artefatos do profile server (gerados fora do target/)
+server/
+
+# Sobra de build antigo
+dependency-reduced-pom.xml

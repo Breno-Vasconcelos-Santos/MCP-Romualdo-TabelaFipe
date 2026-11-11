@@ -13,9 +13,9 @@ services:
      # 
      # ro: read-only
      volumes:
-       - ./server:/opt/mcp/server:ro
+       - ./server:/opt/mcp/server:ro,Z
      # executa o servidor MCP em Java
      command:
        - java
        - -jar
-       - /opt/mcp/server/mcp_server01_server.jar
+       - /opt/mcp/server/mcp_tabela_fipe_server.jar

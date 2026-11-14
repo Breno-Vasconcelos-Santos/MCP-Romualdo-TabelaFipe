@@ -6,10 +6,10 @@
    <modelVersion>4.0.0</modelVersion>
 
    <groupId>br.edu.ifpr</groupId>
-   <artifactId>mcp_server01</artifactId>
+   <artifactId>mcp_tabela_fipe</artifactId>
    <version>0.0.1-SNAPSHOT</version>
 
-   <name>MCP Client/Server - Exemplo 01</name>
+   <name>MCP Server Tabela FIPE</name>
 
    <properties>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -30,6 +30,8 @@
       <maven-compiler-plugin.target>25</maven-compiler-plugin.target>
 
       <maven-jar-plugin.version>3.5.1</maven-jar-plugin.version>
+
+      <jackson-databind.version>3.1.4</jackson-databind.version>
 
       <maven-surefire-plugin.version>3.6.0</maven-surefire-plugin.version>
       <maven-failsafe-plugin.version>3.6.0</maven-failsafe-plugin.version>
@@ -65,6 +67,13 @@
          <groupId>io.modelcontextprotocol.sdk</groupId>
          <artifactId>mcp</artifactId>
       </dependency>
+
+      <dependency>
+         <groupId>tools.jackson.core</groupId>
+         <artifactId>jackson-databind</artifactId>
+         <version>${jackson-databind.version}</version>
+      </dependency>
+
       <!-- Source: https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
       <dependency>
          <groupId>org.slf4j</groupId>
@@ -162,7 +171,7 @@ https://github.com/thought2code/mcp-java-sdk-examples/blob/main/mcp-server-files
 
          <properties>
             <server-main-class>
-               br.edu.ifpr.mcp_server.main.McpServer01SyncStdio
+               br.edu.ifpr.mcp_server.main.McpServerTabelaFipe
             </server-main-class>
 
             <dist-dir>${project.basedir}/server</dist-dir>
@@ -254,7 +263,7 @@ https://github.com/thought2code/mcp-java-sdk-examples/blob/main/mcp-server-files
 
          <properties>
             <client-main-class>
-               br.edu.ifpr.mcp_server.main.McpClient01SyncStdio
+               br.edu.ifpr.mcp_server.main.McpClientTabelaFipe
             </client-main-class>
 
             <dist-dir>dist-client</dist-dir>

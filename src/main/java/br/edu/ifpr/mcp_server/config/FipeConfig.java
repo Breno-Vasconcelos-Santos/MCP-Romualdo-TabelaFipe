@@ -18,7 +18,7 @@ import java.util.Map;
  */
 public record FipeConfig(URI baseUrl, String token, Duration timeout) {
    public static final String   URL_PADRAO     =
-                                         "https://fipe.parallelum.com.br/api/v2/references";
+                                         "https://fipe.parallelum.com.br/api/v2";
    public static final Duration TIMEOUT_PADRAO = Duration.ofSeconds(10);
 
    static final String VARIAVEL_BASE_URL = "FIPE_BASE_URL";

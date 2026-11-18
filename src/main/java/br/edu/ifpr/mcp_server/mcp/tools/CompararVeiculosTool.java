@@ -22,7 +22,7 @@ import br.edu.ifpr.mcp_server.mcp.utils.Formatos;
 import br.edu.ifpr.mcp_server.mcp.utils.RespostaFerramenta;
 import br.edu.ifpr.mcp_server.mcp.utils.ToolArguments;
 
-/** Ferramenta comparar_veiculos. */
+// Ferramenta comparar_veiculos
 public class CompararVeiculosTool extends AbstractFipeTool {
 
    public CompararVeiculosTool(FipeService service) {

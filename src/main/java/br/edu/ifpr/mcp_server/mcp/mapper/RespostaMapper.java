@@ -19,9 +19,7 @@ import br.edu.ifpr.mcp_server.mcp.dto.ListaMarcasResponse;
 import br.edu.ifpr.mcp_server.mcp.dto.PrecoResponse;
 import br.edu.ifpr.mcp_server.mcp.utils.Formatos;
 
-/**
- * Converte os objetos do modelo nos DTOs de saída das ferramentas.
- */
+// Converte os objetos do modelo nos DTOs de saída das ferramentas.
 public final class RespostaMapper {
    private RespostaMapper() {}
 

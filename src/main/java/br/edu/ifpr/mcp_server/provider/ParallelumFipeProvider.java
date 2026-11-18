@@ -26,12 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
-/**
- * Implementação do FipeProvider sobre a API da Parallelum (v2).
- * Funciona como um Adapter: traduz as requisições HTTP e as respostas JSON da
- * API para os objetos do modelo e converte os erros HTTP nas exceções da
- * aplicação, de acordo com o contexto de cada consulta
- */
+// Implementação do FipeProvider sobre a API da Parallelum
 public class ParallelumFipeProvider implements FipeProvider {
    private static final Logger LOG =
                           LoggerFactory.getLogger(ParallelumFipeProvider.class);

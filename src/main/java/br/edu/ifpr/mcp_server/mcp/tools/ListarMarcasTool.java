@@ -15,7 +15,7 @@ import br.edu.ifpr.mcp_server.mcp.utils.EsquemaEntrada;
 import br.edu.ifpr.mcp_server.mcp.utils.RespostaFerramenta;
 import br.edu.ifpr.mcp_server.mcp.utils.ToolArguments;
 
-/** Ferramenta listar_marcas. */
+// Ferramenta listar_marcas
 public class ListarMarcasTool extends AbstractFipeTool {
 
    public ListarMarcasTool(FipeService service) {

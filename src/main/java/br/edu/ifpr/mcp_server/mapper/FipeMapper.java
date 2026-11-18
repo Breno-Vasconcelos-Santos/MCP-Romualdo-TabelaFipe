@@ -36,9 +36,6 @@ public final class FipeMapper {
       return new AnoModelo(dto.code(),dto.name());
    }
 
-   /**
-    * @param tipo tipo do veículo consultado (a resposta não é usada para isso)
-    */
    public static PrecoVeiculo paraPreco(TipoVeiculo tipo, PrecoDto dto) {
       exigirPresente(dto);
       if (dto.modelYear() == null)
@@ -52,8 +49,6 @@ public final class FipeMapper {
    /**
     * Converte um valor monetário no formato brasileiro ("R$ 2.918.759,00") em
     * BigDecimal (2918759.00).
-    *
-    * @throws IllegalArgumentException se o texto não estiver nesse formato
     */
    public static BigDecimal converterValor(String texto) {
       String limpo = Textos.limparEspacos(texto);

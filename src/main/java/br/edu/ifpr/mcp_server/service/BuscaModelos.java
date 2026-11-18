@@ -14,7 +14,7 @@ public record BuscaModelos(Marca marca,
       modelos = List.copyOf(modelos);
    }
 
-   /** @return true se havia mais modelos do que os devolvidos */
+   // retorna true se havia mais modelos do que os devolvidos
    public boolean limitada() {
       return modelos.size() < totalEncontrado;
    }

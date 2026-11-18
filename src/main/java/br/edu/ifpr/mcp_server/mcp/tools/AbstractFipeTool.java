@@ -22,11 +22,9 @@ import io.modelcontextprotocol.spec.McpSchema.ToolAnnotations;
 
 /**
  * Base das ferramentas FIPE (padrão Template Method).
- *
  * Define o algoritmo comum a todas as ferramentas: registrar-se no servidor,
  * ler os argumentos, executar e converter o resultado ou o erro para o
- * protocolo MCP. Cada ferramenta concreta informa apenas o que a diferencia:
- * nome, descrição, parâmetros e o que fazer ao ser executada.
+ * protocolo MCP
  */
 public abstract class AbstractFipeTool implements McpToolDefinition {
    private static final Logger LOG = LoggerFactory.getLogger(AbstractFipeTool.class);
@@ -37,22 +35,22 @@ public abstract class AbstractFipeTool implements McpToolDefinition {
       this.service = service;
    }
 
-   /** @return o nome da ferramenta no protocolo (ex.: "consultar_preco") */
+   // retorna o nome da ferramenta no protocolo (ex.: "consultar_preco")
    protected abstract String nome();
 
-   /** @return um título curto para exibição */
+   // retorna um título curto para exibição
    protected abstract String titulo();
 
-   /** @return a descrição lida pelo modelo de IA para decidir quando usá-la */
+   // retorna a descrição lida pelo modelo de IA para decidir quando usá-la
    protected abstract String descricao();
 
-   /** @return o JSON Schema dos parâmetros */
+   // retorna o JSON Schema dos parâmetros
    protected abstract Map<String,Object> esquemaEntrada();
 
-   /** Executa a ferramenta com os argumentos já encapsulados. */
+   // Executa a ferramenta com os argumentos já encapsulados
    protected abstract RespostaFerramenta executar(ToolArguments argumentos);
 
-   /** @return a definição da ferramenta no formato do protocolo */
+   // retorna a definição da ferramenta no formato do protocolo
    public Tool definicao() {
       return Tool.builder(nome(),esquemaEntrada())
                  .title(titulo())
@@ -74,11 +72,7 @@ public abstract class AbstractFipeTool implements McpToolDefinition {
                                      .build());
    }
 
-   /**
-    * Executa a ferramenta. Erros esperados (FipeException) viram resultados de
-    * erro com a mensagem original; erros inesperados viram uma mensagem
-    * genérica e são registrados no log com o detalhe completo.
-    */
+   // Executa a ferramenta
    @Override
    public final CallToolResult run(McpSyncServerExchange exchange,
                                    CallToolRequest request) {

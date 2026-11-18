@@ -5,12 +5,7 @@ import java.util.Arrays;
 import br.edu.ifpr.mcp_server.model.TipoVeiculo;
 import br.edu.ifpr.mcp_server.mcp.utils.EsquemaEntrada;
 
-/**
- * Nomes e descrições dos parâmetros comuns às ferramentas FIPE.
- *
- * Centraliza as definições para que todas as ferramentas descrevam o mesmo
- * parâmetro da mesma forma (DRY).
- */
+// Nomes e descrições dos parâmetros comuns às ferramentas FIPE
 final class ParametrosFipe {
    static final String TIPO          = "tipo";
    static final String MARCA         = "marca";
@@ -45,7 +40,7 @@ final class ParametrosFipe {
                                       "listar_anos (ex.: \"2020-1\").",true);
    }
 
-   /** Esquema completo de um veículo: tipo, marca, modelo e ano. */
+   // Esquema completo de um veículo: tipo, marca, modelo e ano
    static EsquemaEntrada veiculo() {
       return codigoAno(codigoModelo(marca(tipo(EsquemaEntrada.objeto()))));
    }

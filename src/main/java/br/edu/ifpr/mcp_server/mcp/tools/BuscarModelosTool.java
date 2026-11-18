@@ -15,7 +15,7 @@ import br.edu.ifpr.mcp_server.mcp.utils.EsquemaEntrada;
 import br.edu.ifpr.mcp_server.mcp.utils.RespostaFerramenta;
 import br.edu.ifpr.mcp_server.mcp.utils.ToolArguments;
 
-/** Ferramenta buscar_modelos. */
+// Ferramenta buscar_modelos
 public class BuscarModelosTool extends AbstractFipeTool {
 
    public BuscarModelosTool(FipeService service) {

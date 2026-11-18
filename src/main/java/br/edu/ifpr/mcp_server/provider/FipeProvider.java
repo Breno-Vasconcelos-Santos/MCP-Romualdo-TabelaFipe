@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Fonte de dados da Tabela FIPE.
  * O restante da aplicação depende apenas desta interface, e não de uma API
- * específica (Princípio da Inversão de Dependência).
+ * específica
  *
  * Todos os métodos podem lançar:
  * {@link RecursoNaoEncontradoException} quando o item consultado não existe;

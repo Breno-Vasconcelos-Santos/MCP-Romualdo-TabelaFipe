@@ -15,7 +15,7 @@ import br.edu.ifpr.mcp_server.mcp.utils.Formatos;
 import br.edu.ifpr.mcp_server.mcp.utils.RespostaFerramenta;
 import br.edu.ifpr.mcp_server.mcp.utils.ToolArguments;
 
-/** Ferramenta consultar_preco. */
+// Ferramenta consultar_preco.
 public class ConsultarPrecoTool extends AbstractFipeTool {
 
    public ConsultarPrecoTool(FipeService service) {

@@ -23,10 +23,7 @@ public final class ToolArguments {
       this.valores = valores == null ? Map.of() : valores;
    }
 
-   /**
-    * @return o texto do parâmetro, sem espaços extras
-    * @throws ArgumentoInvalidoException se o parâmetro estiver ausente ou vazio
-    */
+   // retorna o texto do parâmetro, sem espaços extras
    public String texto(String nome) {
       String valor = textoOpcional(nome);
 
@@ -36,12 +33,6 @@ public final class ToolArguments {
       return valor;
    }
 
-   /**
-    * Aceita texto ou número (modelos de IA às vezes enviam códigos numéricos
-    * como números, ex.: 11403 em vez de "11403").
-    *
-    * @return o texto do parâmetro, ou null se estiver ausente ou vazio
-    */
    public String textoOpcional(String nome) {
       Object valor = valores.get(nome);
 
@@ -58,19 +49,11 @@ public final class ToolArguments {
                                            "' deve ser um texto.");
    }
 
-   /**
-    * @throws ArgumentoInvalidoException se o tipo estiver ausente ou inválido
-    */
    public TipoVeiculo tipo(String nome) {
       return TipoVeiculo.deNome(textoOpcional(nome));
    }
 
-   /**
-    * @return cada item da lista como um novo conjunto de argumentos
-    * @throws ArgumentoInvalidoException se o parâmetro estiver ausente, não
-    *                                    for uma lista ou contiver itens que
-    *                                    não sejam objetos
-    */
+   // retorna cada item da lista como um novo conjunto de argumentos
    public List<ToolArguments> listaDeObjetos(String nome) {
       Object valor = valores.get(nome);
 

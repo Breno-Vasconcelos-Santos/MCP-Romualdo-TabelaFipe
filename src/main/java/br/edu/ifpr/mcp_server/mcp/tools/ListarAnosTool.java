@@ -16,7 +16,7 @@ import br.edu.ifpr.mcp_server.mcp.utils.EsquemaEntrada;
 import br.edu.ifpr.mcp_server.mcp.utils.RespostaFerramenta;
 import br.edu.ifpr.mcp_server.mcp.utils.ToolArguments;
 
-/** Ferramenta listar_anos. */
+// Ferramenta listar_anos
 public class ListarAnosTool extends AbstractFipeTool {
 
    public ListarAnosTool(FipeService service) {

@@ -38,22 +38,17 @@ public record FipeConfig(URI baseUrl, String token, Duration timeout) {
          token = null;
    }
 
-   /** @return true se um token de acesso foi configurado */
+   // retorna true se um token de acesso foi configurado */
    public boolean possuiToken() {
       return token != null;
    }
 
-   /** Cria a configuração a partir das variáveis de ambiente do processo. */
+   // Cria a configuração a partir das variáveis de ambiente do processo
    public static FipeConfig doAmbiente() {
       return deVariaveis(System.getenv());
    }
 
-   /**
-    * Cria a configuração a partir de um mapa de variáveis. Separado de
-    * doAmbiente() para permitir testes sem alterar o ambiente real.
-    *
-    * @throws IllegalArgumentException se FIPE_BASE_URL não for uma URL válida
-    */
+   // Cria a configuração a partir de um mapa de variáveis
    static FipeConfig deVariaveis(Map<String,String> variaveis) {
       String url = Textos.limparEspacos(variaveis.get(VARIAVEL_BASE_URL));
 

@@ -1,365 +1,155 @@
 package br.edu.ifpr.mcp_server.main;
 
 import java.io.File;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import br.edu.ifpr.mcp_server.client.ArgumentReader;
+import br.edu.ifpr.mcp_server.exception.EntradaEncerradaException;
+import br.edu.ifpr.mcp_server.client.ResultPrinter;
+import br.edu.ifpr.mcp_server.client.Terminal;
+import br.edu.ifpr.mcp_server.client.ToolMenu;
 import io.modelcontextprotocol.client.McpClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.ServerParameters;
 import io.modelcontextprotocol.client.transport.StdioClientTransport;
 import io.modelcontextprotocol.json.jackson3.JacksonMcpJsonMapper;
 import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
-import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
-import io.modelcontextprotocol.spec.McpSchema.Content;
-import io.modelcontextprotocol.spec.McpSchema.ListToolsResult;
 import io.modelcontextprotocol.spec.McpSchema.LoggingLevel;
 import io.modelcontextprotocol.spec.McpSchema.LoggingMessageNotification;
-import io.modelcontextprotocol.spec.McpSchema.TextContent;
 import io.modelcontextprotocol.spec.McpSchema.Tool;
 import tools.jackson.databind.json.JsonMapper;
 
+// Cliente MCP da Tabela FIPE com transporte STDIO
 public class McpClientTabelaFipe {
-    private static final Logger LOG =
-            LoggerFactory.getLogger(McpClientTabelaFipe.class);
-    // nome e caminho para o servidor MCP
-    private static final String SERVER_PATH =
-            "../../server/mcp_tabela_fipe_server.jar";
-    // objeto cliente para comunicação com o servidor
-    private final McpSyncClient client;
+    private static final Logger LOG = LoggerFactory.getLogger(McpClientTabelaFipe.class);
 
-    // será invocado (chamado) pelo servidor (é a forma que o servidor tem para
-    // "conversar" com o cliente)
-    private void loggingMessageNotification(
-            LoggingMessageNotification notification) {
-        LOG.info("[NOTIFICAÇÃO MCP] Origem: {} | Nível: {} | Mensagem: {}",
-                notification.logger(),
-                notification.level(),
-                notification.data());
+    // Caminho do servidor a partir de target/dist-client, se nenhum for informado
+    private static final String SERVIDOR_PADRAO = "../../server/mcp_tabela_fipe_server.jar";
+
+    private final McpSyncClient  client;
+    private final Terminal       terminal;
+    private final ToolMenu       menu;
+    private final ArgumentReader leitor;
+    private final ResultPrinter  impressora;
+
+    public McpClientTabelaFipe(String caminhoServidor, Terminal terminal) {
+        this.client     = criarCliente(caminhoServidor);
+        this.terminal   = terminal;
+        this.menu       = new ToolMenu(terminal);
+        this.leitor     = new ArgumentReader(terminal);
+        this.impressora = new ResultPrinter(terminal);
     }
 
-    private McpSyncClient createClient() {
-        // identifica o servidor a ser chamado/executado
-        File serverJar = new File(SERVER_PATH);
-        // se o objeto File não é um arquivo: erro!!!
-        if (!serverJar.isFile())
+    private McpSyncClient criarCliente(String caminhoServidor) {
+        File jar = new File(caminhoServidor);
+
+        if (!jar.isFile())
             throw new IllegalStateException("JAR do servidor não encontrado: " +
-                    serverJar.getAbsolutePath());
-        // caminho absoluto do programa executável do servidor
-        String jarPath = serverJar.getAbsolutePath();
-        LOG.info("Servidor MCP: {}",jarPath);
-        // comando para executar a aplicação servidor
-        ServerParameters params  = ServerParameters.builder("java")
-                .args("-jar",jarPath)
+                    jar.getAbsolutePath() + "\nInforme o " +
+                    "caminho como argumento: java -jar " +
+                    "mcp_tabela_fipe_client.jar " +
+                    "<caminho do servidor>");
+        LOG.debug("Servidor MCP: {}",jar.getAbsolutePath());
+
+        ServerParameters     parametros = ServerParameters.builder("java")
+                .args("-jar",
+                        jar.getAbsolutePath())
                 .build();
-        // cria o objeto para comunicação entre cliente e servidor
-        JacksonMcpJsonMapper jsonMapper = new JacksonMcpJsonMapper(
-                new JsonMapper());
-        // estabelece que a comunicação usará o transporte STDIO
-        StdioClientTransport   transport  = new StdioClientTransport(params,
-                jsonMapper);
-        // captura a comunicação entre o cliente e o servidor
-        transport.setStdErrorHandler(
-                line -> LOG.info("[SERVER STDERR] {}", line)
-        );
-        // constrói o objeto cliente
-        return McpClient.sync(transport)
-                // CONFIGURAÇÃO DO LISTENER DE LOGGING:
-                // Registra o handler (tratador) para capturar as
-                // notificações enviadas pelo servidor
-                .loggingConsumer(this::loggingMessageNotification)
+        StdioClientTransport transporte =
+                new StdioClientTransport(parametros,
+                        new JacksonMcpJsonMapper(new JsonMapper()));
+        // o log do servidor só aparece com o nível DEBUG, para não poluir o menu
+        transporte.setStdErrorHandler(linha -> LOG.debug("[SERVIDOR] {}",linha));
+
+        return McpClient.sync(transporte)
+                .loggingConsumer(this::exibirNotificacao)
                 .build();
     }
 
-    private void execute() {
-        // inicializa o cliente com o transporte STDIO para o servidor
+    // notificações enviadas pelo servidor durante a execução das ferramentas
+    private void exibirNotificacao(LoggingMessageNotification notificacao) {
+        LOG.info("[NOTIFICAÇÃO MCP] Origem: {} | Nível: {} | Mensagem: {}",
+                notificacao.logger(),notificacao.level(),notificacao.data());
+    }
+
+    // Executa o laço do menu até o usuário sair ou a entrada terminar
+    public void executar() {
         client.initialize();
-        // define o nível mínimo de "logging" que o cliente quer receber do
-        // servidor
         client.setLoggingLevel(LoggingLevel.INFO);
 
-        // executa o 'looping' para:
-        // - listar ferramentas
-        // - selecionar ferramenta
-        // - realizar entrada de dados da ferramenta, se houver
-        // - executar ferramenta
-        listSelectRunToolLooping();
+        List<Tool> ferramentas = carregarFerramentas();
+        try {
+            while (true) {
+                menu.exibir(ferramentas);
+                String comando = terminal.ler("> ");
+
+                if (comando.isEmpty())
+                    continue;
+                if (ToolMenu.SAIR.equalsIgnoreCase(comando))
+                    return;
+                if (ToolMenu.LISTAR.equalsIgnoreCase(comando)) {
+                    ferramentas = carregarFerramentas();
+                    continue;
+                }
+                Optional<Tool> ferramenta = menu.selecionar(ferramentas,comando);
+
+                if (ferramenta.isPresent())
+                    executarFerramenta(ferramenta.get());
+                else
+                    terminal.escrever("Ferramenta não encontrada: " + comando);
+            }
+        }
+        catch (EntradaEncerradaException ex) {
+            terminal.escrever("");
+        }
     }
 
-    private void close() {
-        LOG.info("Fechando cliente MCP...");
-        // encerra o cliente
+    private List<Tool> carregarFerramentas() {
+        return client.listTools().tools();
+    }
+
+    private void executarFerramenta(Tool ferramenta) {
+        menu.exibirCabecalho(ferramenta);
+
+        Map<String,Object> argumentos = leitor.ler(ferramenta.inputSchema());
+        try {
+            impressora.exibir(client.callTool(CallToolRequest.builder(ferramenta.name())
+                    .arguments(argumentos)
+                    .build()));
+        }
+        catch (RuntimeException ex) {
+            LOG.debug("Falha ao executar a ferramenta '{}'",ferramenta.name(),ex);
+            terminal.escrever("Não foi possível executar a ferramenta: " +
+                    ex.getMessage());
+        }
+    }
+
+    public void encerrar() {
         client.closeGracefully();
-        LOG.info("Cliente MCP fechado.");
-    }
-
-    private void listSelectRunToolLooping() {
-        // os parâmetros para a(s) ferramenta(s) serão lidos da entrada padrão
-        Scanner         scanner = new Scanner(System.in);
-        // recupera as ferramentas disponíveis no servidor
-        ListToolsResult tools   = loadTools();
-        // executa "in perpetuum"
-        while (true) {
-            // mostra as ferramentas (menu) ao usuário
-            showMenu(tools);
-            // exibe o prompt ao usuário
-            System.out.print("> ");
-            // se não houver qualquer entrada, encerra o 'looping'
-            if (!scanner.hasNextLine())
-                break;
-            // obtém uma entrada e remove espaços de ambos os lados, se houverem
-            String command = scanner.nextLine().trim();
-            // se nada foi digitado, reinicia o 'looping'
-            if (command.isBlank())
-                continue;
-            // se o usuário desejar encerrar
-            if ("sair".equalsIgnoreCase(command))
-                break;
-            // se o usuário desejar a lista de ferramentas disponibilizada pelo
-            // servidor MCP
-            if ("listar".equalsIgnoreCase(command)) {
-                tools = loadTools();
-                // reinicia o 'looping'
-                continue;
-            }
-            // tenta encontrar a ferramenta desejada
-            Tool selectedTool = selectTool(tools.tools(),command);
-            // se a ferramenta não foi encontrada, reinicia o 'looping'
-            if (selectedTool == null) {
-                LOG.warn("Ferramenta não encontrada: {}",command);
-                continue;
-            }
-            // ao chegarmos aqui a ferramenta pode ser executada
-            executeTool(selectedTool,scanner);
-        }
-    }
-
-    private ListToolsResult loadTools() {
-        ListToolsResult result = client.listTools();
-
-        LOG.info("Servidor disponibilizou {} ferramenta(s).",
-                result.tools().size());
-
-        return result;
-    }
-
-    private void showMenu(ListToolsResult tools) {
-        // exibe as ferramentas e opções ao usuário
-        System.out.println();
-        System.out.println("========================================");
-        System.out.println(" CLIENTE MCP - TABELA FIPE");
-        System.out.println("========================================");
-
-        if (tools.tools().isEmpty()) {
-            System.out.println("Nenhuma ferramenta disponibilizada.");
-        }
-        else {
-            System.out.println("Ferramentas disponíveis:");
-            for (int i = 0; i < tools.tools().size(); i++) {
-                Tool tool = tools.tools().get(i);
-
-                System.out.printf(" %d - %s%n",i + 1,tool.name());
-                if (tool.description() != null && !tool.description().isBlank())
-                    System.out.printf(" %s%n", tool.description());
-            }
-        }
-        System.out.println();
-        System.out.println("Comandos:");
-        System.out.println(" listar - atualizar lista de ferramentas");
-        System.out.println(" sair - encerrar o cliente");
-        System.out.println();
-    }
-
-    private Tool selectTool(List<Tool> tools, String command) {
-        try {
-            int index = Integer.parseInt(command) - 1;
-
-            if (index >= 0 && index < tools.size())
-                return tools.get(index);
-        }
-        catch (NumberFormatException ignored) {
-            // o comando pode ser o nome da ferramenta
-        }
-        // tenta encontrar a ferramenta solicitada pelo usuário
-        for (Tool tool : tools)
-            if (tool.name().equalsIgnoreCase(command))
-                return tool;
-        // se não encontra a ferramenta
-        return null;
-    }
-
-    private void executeTool(Tool tool, Scanner scanner) {
-        System.out.println();
-        System.out.println("----------------------------------------");
-        System.out.println("Ferramenta: " + tool.name());
-
-        if (tool.description() != null)
-            System.out.println("Descrição: " + tool.description());
-
-        Map<String, Object> arguments = readArguments(tool,scanner);
-        CallToolRequest     request   = CallToolRequest.builder(tool.name())
-                .arguments(arguments)
-                .build();
-        LOG.info("Executando ferramenta '{}'",tool.name());
-        try {
-            CallToolResult result = client.callTool(request);
-
-            showResult(result);
-        }
-        catch (Exception ex) {
-            LOG.error("Erro executando ferramenta '{}'",tool.name(),ex);
-        }
-    }
-
-    private Map<String, Object> readArguments(Tool tool, Scanner scanner) {
-        Map<String, Object> arguments = new LinkedHashMap<>();
-        // recupera os esquema JSON, que define os parâmetros da ferramenta, para
-        // solicitar os valores ao usuário
-        Map<String, Object> schema    = tool.inputSchema();
-        // se o esquema não existe ou está vazio, retorna uma lista vazia
-        if (schema == null || schema.isEmpty())
-            return arguments;
-        // recupera as propriedades do esquema da ferramenta
-        // ver método register() da classe SimpleReportTool
-        Object propertiesObject = schema.get("properties");
-
-        if (!(propertiesObject instanceof Map<?, ?>))
-            return arguments;
-
-        Map<?, ?> properties = (Map<?, ?>) propertiesObject;
-        List<?>   required   = getRequiredProperties(schema);
-
-        if (properties.isEmpty())
-            return arguments;
-
-        System.out.println();
-        System.out.println("Informe os parâmetros:");
-        for (Map.Entry<?, ?> entry : properties.entrySet()) {
-            String name = String.valueOf(entry.getKey());
-
-            if (!(entry.getValue() instanceof Map<?, ?>))
-                continue;
-            // recupera o esquema (a descrição dos parâmetros) da ferramenta
-            Map<?, ?> property    = (Map<?, ?>) entry.getValue();
-            String    type        = getStringValue(property,"type","string");
-            String    description = getStringValue(property,"description","");
-            boolean   isRequired  = required.contains(name);
-            Object    value       = readArgument(scanner,name,type,description,
-                    isRequired,property);
-
-            if (value != null)
-                arguments.put(name,value);
-        }
-        return arguments;
-    }
-
-    private String getStringValue(Map<? ,?> map, String key,
-                                  String defaultValue) {
-        Object value = map.get(key);
-
-        return value != null ? String.valueOf(value) : defaultValue;
-    }
-
-    private List<?> getRequiredProperties(Map<String, Object> schema) {
-        Object required = schema.get("required");
-        // verifica se há uma ou mais propriedades no esquema JSON que são
-        // obrigatórias
-        if (required instanceof List<?>)
-            return (List<?>) required;
-        // retorna uma lista vazia
-        return List.of();
-    }
-
-    private Object readArgument(Scanner scanner, String name, String type,
-                                String description, boolean required,
-                                Map<?, ?> schema) {
-        while (true) {
-            System.out.println();
-            System.out.println("'" + name + "' [" + type + "] " +
-                    (required ? "(obrigatório)" : "(opcional)"));
-            System.out.println("Descrição: " + description);
-            System.out.print("Valor: ");
-
-            if (!scanner.hasNextLine())
-                return null;
-
-            String value = scanner.nextLine().trim();
-            if (value.isBlank()) {
-                if (!required) return null;
-
-                System.out.println("Este parâmetro é obrigatório.");
-                continue;
-            }
-            try { return convertValue(value,type,schema); }
-            catch (IllegalArgumentException ex) {
-                System.out.println("Valor inválido: " + ex.getMessage());
-            }
-        }
-    }
-
-    private Object convertValue(String value, String type, Map<?, ?> schema) {
-        return switch (type) {
-            case "integer" -> Integer.valueOf(value);
-            case "number" -> Double.valueOf(value);
-            case "boolean" -> parseBoolean(value);
-            case "string" -> value;
-            default -> parseComplexValue(value,type,schema);
-        };
-    }
-
-    private Boolean parseBoolean(String value) {
-        if ("true".equalsIgnoreCase(value) || "sim".equalsIgnoreCase(value))
-            return true;
-
-        if ("false".equalsIgnoreCase(value) ||
-                "não".equalsIgnoreCase(value) || "nao".equalsIgnoreCase(value))
-            return false;
-
-        throw new IllegalArgumentException("informe true/false ou sim/não");
-    }
-
-    private Object parseComplexValue(String value, String type,
-                                     Map<?, ?> schema) {
-        if ("null".equals(type))
-            return null;
-
-        throw new IllegalArgumentException("tipo não suportado pelo modo " +
-                "interativo: " + type);
-    }
-
-    private void showResult(CallToolResult result) {
-        String titulo = Boolean.TRUE.equals(result.isError()) ? " ERRO " : " RESULTADO ";
-
-        System.out.println();
-        System.out.println("===============" + titulo + "===============");
-        // exibe ao usuário apenas o texto de cada conteúdo; os dados
-        // estruturados (structuredContent) são destinados a programas e
-        // assistentes de IA, e não à leitura
-        result.content().forEach(content -> System.out.println(textoDe(content)));
-        System.out.println("=========================================");
-    }
-
-    private String textoDe(Content content) {
-        if (content instanceof TextContent texto)
-            return texto.text();
-        // outros tipos de conteúdo (imagem, áudio...) não são exibidos no terminal
-        return "[conteúdo do tipo " + content.getClass().getSimpleName() +
-                " não exibido]";
-    }
-
-    public McpClientTabelaFipe() {
-        this.client = createClient();
     }
 
     public static void main(String... args) {
-        McpClientTabelaFipe clientStdio = new McpClientTabelaFipe();
+        String   caminhoServidor = args.length > 0 ? args[0] : SERVIDOR_PADRAO;
+        Terminal terminal        = new Terminal(System.in,System.out);
 
-        try { clientStdio.execute(); }
-        finally { clientStdio.close(); }
+        try {
+            McpClientTabelaFipe cliente = new McpClientTabelaFipe(caminhoServidor,
+                    terminal);
+            try {
+                cliente.executar();
+            }
+            finally {
+                cliente.encerrar();
+            }
+        }
+        catch (IllegalStateException ex) {
+            terminal.escrever(ex.getMessage());
+            System.exit(1);
+        }
     }
 }

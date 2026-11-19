@@ -21,11 +21,7 @@ import io.modelcontextprotocol.spec.McpSchema.Implementation;
 import io.modelcontextprotocol.spec.McpSchema.ServerCapabilities;
 import tools.jackson.databind.json.JsonMapper;
 
-/**
- * Servidor MCP da Tabela FIPE com transporte STDIO.
- * Esta classe é a raiz de composição da aplicação servidor: configura o
- * transporte, cria as ferramentas e as registra no servidor.
- */
+// Servidor MCP da Tabela FIPE com transporte STDIO
 public class McpServerTabelaFipe {
     private static final Logger LOG = LoggerFactory.getLogger(McpServerTabelaFipe.class);
 
@@ -66,11 +62,7 @@ public class McpServerTabelaFipe {
                 .capabilities(capabilities);
     }
 
-    /**
-     * Cria as ferramentas disponibilizadas pelo servidor. Nas próximas etapas,
-     * este método também montará as dependências das ferramentas (provider,
-     * cache e serviço) e as injetará pelos construtores.
-     */
+    // Cria as ferramentas disponibilizadas pelo servidor
     private List<McpToolDefinition> createTools() {
         FipeProvider provider = new CachingFipeProvider(
                 new ParallelumFipeProvider(FipeConfig.doAmbiente()));

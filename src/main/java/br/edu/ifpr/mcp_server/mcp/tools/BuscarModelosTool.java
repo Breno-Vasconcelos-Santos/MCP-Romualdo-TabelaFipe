@@ -62,14 +62,14 @@ public class BuscarModelosTool extends AbstractFipeTool {
    }
 
    private String texto(BuscaModelos busca) {
-      String marca  = "Marca: " + busca.marca().nome() + " (código " +
+      String marca  = "marca: " + busca.marca().nome() + " (código " +
                       busca.marca().codigo() + ")\n";
       String filtro = busca.termo().isEmpty() ? "" : " com \"" + busca.termo() + "\"";
 
       if (busca.modelos().isEmpty())
          return marca + "Nenhum modelo" + filtro + " encontrado.";
 
-      String texto = busca.totalEncontrado() + marca + "Modelos" + filtro + ":\n" +
+      String texto = busca.totalEncontrado() + " Modelos encontrados para a "+ marca + "Modelos" + filtro + ":\n" +
                      busca.modelos().stream()
                           .map(modelo -> modelo.codigo() + " – " + modelo.nome())
                           .collect(Collectors.joining("\n"));

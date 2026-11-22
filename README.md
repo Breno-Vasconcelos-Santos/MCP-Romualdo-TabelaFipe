@@ -1,15 +1,8 @@
-<!--
-Markdown Cheatsheet
-https://github.com/adam-p/markdown-here/wiki/markdown-cheatsheet
--->
-
 # MCP Server Tabela FIPE 📃🚗
  
 Servidor e cliente MCP ([Model Context Protocol](https://modelcontextprotocol.io)) em Java para consultar a **Tabela FIPE** de carros, motos e caminhões. O servidor disponibiliza cinco ferramentas que permitem a um assistente de IA ou a uma pessoa, pelo cliente do terminal, ir do nome de um veículo até o seu preço FIPE, e comparar preços entre veículos.
  
-Os dados vêm da [API FIPE da Parallelum](https://github.com/deividfortuna/fipe), que não exige cadastro nem token.
- 
-Trabalho final da disciplina **Serviços Web** (IFPR), desenvolvido a partir da aplicação exemplo apresentada em aula, com o [MCP Java SDK](https://github.com/modelcontextprotocol/java-sdk) e transporte **STDIO**.
+Os dados vêm da [API FIPE da Parallelum](https://github.com/deividfortuna/fipe), que não exige cadastro nem token. Porém, há um limite de 500 requisições sem token. Caso deseje um limite acima disso, o token será necessário.
  
 ## Sumário
  
@@ -21,17 +14,16 @@ Trabalho final da disciplina **Serviços Web** (IFPR), desenvolvido a partir da 
 6. [Cliente MCP do projeto](#6-cliente-mcp-do-projeto)
 7. [Claude Desktop](#7-claude-desktop)
 8. [MCP Inspector](#8-mcp-inspector)
-9. [Outros assistentes: Claude Code](#9-outros-assistentes-claude-code)
-10. [Ferramentas](#10-ferramentas)
-11. [Testes](#11-testes)
-12. [Possíveis problemas comuns](#12-possíveis-problemas-comuns)
+9. [Ferramentas](#9-ferramentas)
+10. [Testes](#10-testes)
+11. [Possíveis problemas comuns](#11-possíveis-problemas-comuns)
 ---
  
 ## 1. Pré-requisitos
  
 | Requisito | Versão | Observação |
 | --- | --- | --- |
-| JDK | 25 | o projeto é compilado com `release 25` |
+| JDK | 25 | o projeto é compilado com `release 25`; o **Maven** precisa estar usando esse JDK (confira a linha `Java version` do `mvn -v`) |
 | Apache Maven | 3.9 ou superior | confira com `mvn -v` |
 | Eclipse IDE | com suporte a Java 25 | para a importação descrita na seção 2 |
 | Docker | Docker Desktop ou Docker Engine com Compose | para executar o MCP Inspector |
@@ -41,31 +33,40 @@ Trabalho final da disciplina **Serviços Web** (IFPR), desenvolvido a partir da 
  
 | Variável | Padrão | Uso |
 | --- | --- | --- |
-| `FIPE_BASE_URL` | `https://fipe.parallelum.com.br/api/v2` | endereço da API; usada pelos testes de integração para apontar o servidor para uma API simulada |
 | `FIPE_TOKEN` | — | token da API, que eleva o limite de 500 para 1.000 requisições por dia, mas não é necessário |
  
 ---
  
 ## 2. Importação no Eclipse
  
-1. **File → Import → Maven → Existing Maven Projects**.
-2. Em **Root Directory**, selecione a pasta do projeto  que contém o `pom.xml` e clique em **Finish**.
-Os arquivos de configuração do Eclipse (`.project`, `.classpath`, `.settings`) não estão no repositório de propósito: o Eclipse os gera a partir do `pom.xml` durante a importação, já com o Java 25 e a codificação UTF-8.
+1. Clone o repositório. Uma sugestão é usar a sua pasta `eclipse-workspace`:
+ 
+   ```bash
+   cd eclipse-workspace
+   git clone https://github.com/Breno-Vasconcelos-Santos/MCP-Romualdo-TabelaFipe.git
+   ```
+ 
+   Qualquer pasta funciona: a importação não copia o projeto, apenas o registra no Eclipse.
+ 
+2. **File → Import → Maven → Existing Maven Projects**.
+3. Em **Root Directory**, selecione a pasta do projeto que contém o `pom.xml` e clique em **Finish**.
  
 ---
  
 ## 3. Builds: testes e artefatos
  
-Há quatro builds, cada um com um objetivo. Pela linha de comando, execute-os na raiz do projeto; no Eclipse, use o conteúdo da coluna **Goals**.
+Execute os builds **na ordem abaixo**. Pela linha de comando, na raiz do projeto; no Eclipse, com o conteúdo da coluna **Goals** (veja como em seguida).
  
-| Objetivo | Linha de comando | Goals no Eclipse | Resultado |
-| --- | --- | --- | --- |
-| Testes unitários | `mvn test` | `test` | relatório em `target/surefire-reports` |
-| Servidor + testes de integração | `mvn clean verify -Pserver` | `clean verify -Pserver` | servidor em `server/` e relatório em `target/failsafe-reports` |
-| Apenas o servidor | `mvn clean package -Pserver -DskipTests` | `clean package -Pserver -DskipTests` | `server/mcp_tabela_fipe_server.jar` e `server/libs/` |
-| Apenas o cliente | `mvn package -Pclient -DskipTests` | `package -Pclient -DskipTests` | `target/dist-client/mcp_tabela_fipe_client.jar` e `target/dist-client/libs/` |
+| # | Objetivo | Linha de comando | Goals no Eclipse | Resultado |
+| --- | --- | --- | --- | --- |
+| 1 | Verificação inicial | `mvn clean compile` | `clean compile` | baixa as dependências e confirma que o projeto compila |
+| 2 | Testes unitários | `mvn test` | `test` | relatório em `target/surefire-reports` |
+| 3 | Servidor + testes de integração | `mvn clean verify -Pserver` | `clean verify -Pserver` | servidor em `server/` e relatório em `target/failsafe-reports` |
+| 4 | Cliente | `mvn package -Pclient -DskipTests` | `package -Pclient -DskipTests` | `target/dist-client/mcp_tabela_fipe_client.jar` e `target/dist-client/libs/` |
  
-**Ordem:** gere o servidor antes do cliente. O build do servidor com `clean` apaga a pasta `target/`, e com ela o cliente; nesse caso, gere o cliente de novo.
+**O cliente vem por último.** Os builds com `clean` apagam a pasta `target/`, e com ela o cliente. Sempre que gerar o servidor de novo, gere o cliente em seguida.
+ 
+**Para gerar apenas o servidor**, sem executar os testes: `mvn clean package -Pserver -DskipTests` (no Eclipse, Goals `clean package -Pserver -DskipTests`).
  
 **O jar do servidor depende da pasta `libs/` ao lado dele.** Se for copiá-lo para outro lugar, copie a pasta `server/` inteira.
  
@@ -75,15 +76,11 @@ Os testes não acessam a internet: a API FIPE é simulada por um servidor HTTP l
  
 1. Clique com o botão direito no projeto → **Run As → Maven build...**
 2. Em **Goals**, informe o valor da tabela para o build desejado.
-3. Clique em **Run**.
+3. Na aba **JRE**, confira se o JDK 25 está selecionado.
+4. Clique em **Run**.
+ 
 O Eclipse guarda cada configuração criada. Nas próximas vezes, escolha-a na lista que se abre pela seta ao lado do botão **Run** da barra de ferramentas.
  
-### Aviso de acesso nativo (opcional)
- 
-A partir do Java 24, o Maven exibe avisos como `WARNING: A restricted method in java.lang.System has been called`. Eles vêm de bibliotecas internas do próprio Maven, não deste projeto, e **não impedem nenhum build**. Para ocultá-los no Eclipse, há duas opções:
- 
-- **Uma vez, para todos os builds:** **Window → Preferences → Java → Installed JREs**, selecione o JDK 25, clique em **Edit** e informe `--enable-native-access=ALL-UNNAMED` em **Default VM arguments**.
-- **Por configuração:** na tela do **Maven build...**, aba **JRE**, campo **VM arguments**, informe o mesmo valor. Nesse caso, o ajuste vale apenas para aquela configuração e precisa ser repetido em cada uma.
 ---
  
 ## 4. Arquitetura
@@ -236,18 +233,29 @@ O cliente é genérico: ele não conhece nenhuma ferramenta em particular e mont
 ## 7. Claude Desktop
  
 1. Gere o servidor (seção 3).
-2. Abra o arquivo de configuração do Claude Desktop (se não existir, crie-o):
+2. Abra o arquivo de configuração pelo próprio Claude Desktop: **Settings → Developer → Edit Config**. Esse caminho abre o arquivo `claude_desktop_config.json` correto, ou o cria, se ainda não existir, seja qual for a forma de instalação. Caso o modo desenvolvedor esteja desativado, o ative em: **Settings → Help → Troubleshooting -> Enable Developer Mode**
+
+Para referência, os locais mais comuns são:
+ 
    | Sistema | Local do `claude_desktop_config.json` |
    | --- | --- |
-   | Windows (instalação pela Microsoft Store) | `C:\Users\<USUÁRIO>\AppData\Local\Packages\Claude_<código>\LocalCache\Roaming\Claude\` |
-   | Windows (instalador do site) | `%APPDATA%\Claude\` |
+   | Windows (instalador do site) | `AppData\Local\Claude-Data\claude_pzs8sxrjxfjjc` |
    | macOS | `~/Library/Application Support/Claude/` |
    | Linux | `~/.config/Claude/` |
-   No Windows, o diretório `Users` também pode aparecer como `Usuários`, e o sufixo de `Claude_<código>` varia de uma instalação para outra.
-3. Acrescente o servidor à entrada `mcpServers`, com o **caminho absoluto** do jar:
-   **Windows** (as barras invertidas são duplicadas no JSON):
+ 
+   O `<código>` varia de uma instalação para outra.
+ 
+3. Acrescente o servidor à entrada `mcpServers`, com o **caminho absoluto** do jar.
+ 
+> **Atenção:** versões recentes do Claude Desktop guardam as próprias preferências no mesmo arquivo, dentro de um objeto `preferences`. O `mcpServers` deve ficar **no primeiro nível** do arquivo, ao lado de `preferences`, e nunca dentro dele. Dentro de `preferences`, o servidor é ignorado sem nenhuma mensagem de erro.
+ 
+**Windows** (as barras invertidas são duplicadas no JSON; mantenha as preferências que já existirem no arquivo):
+ 
 ```json
 {
+  "preferences": {
+    "sidebarMode": "chat"
+  },
   "mcpServers": {
     "tabela-fipe": {
       "command": "java",
@@ -257,7 +265,7 @@ O cliente é genérico: ele não conhece nenhuma ferramenta em particular e mont
 }
 ```
  
-   **Linux e macOS:**
+**Linux e macOS** (se o arquivo não tiver `preferences`, ele fica apenas com o `mcpServers`):
  
 ```json
 {
@@ -270,8 +278,13 @@ O cliente é genérico: ele não conhece nenhuma ferramenta em particular e mont
 }
 ```
  
-4. **Encerre o Claude Desktop completamente** (não basta fechar a janela) e abra-o de novo.
-Se o servidor não aparecer, troque `"java"` pelo caminho completo do executável do JDK 25 (por exemplo, `C:\\Program Files\\Java\\jdk-25\\bin\\java.exe`). Aplicativos gráficos nem sempre recebem o mesmo `PATH` do terminal.
+4. **Encerre o Claude Desktop completamente**, pelo ícone na bandeja do sistema (**Quit**); não basta fechar a janela. Depois, abra-o de novo.
+ 
+Se o servidor não aparecer:
+ 
+- Confira se o JSON é válido: uma vírgula a mais ou a menos faz o Claude Desktop ignorar o arquivo inteiro.
+- Troque `"java"` pelo caminho completo do executável do JDK 25 (por exemplo, `C:\\Program Files\\Java\\jdk-25\\bin\\java.exe`). Aplicativos gráficos nem sempre recebem o mesmo `PATH` do terminal.
+- Consulte o log do servidor, na pasta `logs` ao lado do arquivo de configuração (na instalação comum do Windows, `%APPDATA%\Claude\logs`).
  
 ### Perguntas para testar
  
@@ -297,33 +310,14 @@ docker compose up -d
 4. Para encerrar: `docker compose down`.
 O `compose.yaml` constrói a imagem (se ainda não existir), compartilha a pasta `server/` com o contêiner em modo somente leitura e configura o Inspector para iniciar o servidor. Se o servidor for gerado de novo, não é preciso recriar o contêiner: basta desconectar e conectar novamente na interface.
  
-> Em Linux com SELinux (Fedora, por exemplo), o volume já está marcado com `:Z`, que dá ao contêiner acesso à pasta `server/`. Em outros sistemas, essa opção não tem efeito.
- 
 ### Na interface
  
 Conecte ao servidor, abra a aba **Tools**, clique em **List Tools** e execute qualquer ferramenta preenchendo o formulário. Para a `comparar_veiculos`, a opção **Edit as JSON** facilita montar a lista de veículos.
  
 ---
  
-## 9. Outros assistentes: Claude Code
  
-O [Claude Code](https://code.claude.com/docs/pt/setup) é o assistente de linha de comando da Anthropic. Ele roda em Windows, macOS e Linux, e exige uma conta Claude paga (Pro ou superior) ou créditos da API.
- 
-1. Instale seguindo a [documentação oficial](https://code.claude.com/docs/pt/setup) e faça o login executando `claude`.
-2. Registre o servidor, com o **caminho absoluto** do jar:
-```bash
-claude mcp add --scope user --transport stdio tabela-fipe -- java -jar /caminho/do/projeto/server/mcp_tabela_fipe_server.jar
-```
- 
-   O `--scope user` deixa o servidor disponível em qualquer pasta. Sem ele, o registro vale só para a pasta em que o comando foi executado.
- 
-3. Confira a conexão com `claude mcp list` (o servidor deve aparecer como conectado).
-4. Abra o `claude` e faça perguntas como as da seção 7. Dentro da sessão, `/mcp` mostra o status do servidor.
-Para remover: `claude mcp remove tabela-fipe`.
- 
----
- 
-## 10. Ferramentas
+## 9. Ferramentas
  
 As cinco ferramentas formam um fluxo: **descobrir o modelo → escolher o ano → consultar ou comparar o preço**. Todas são somente leitura.
  
@@ -343,7 +337,7 @@ Em todas elas:
 - `marca` aceita o **código** (`189`) ou o **nome** (`aston martin`). O nome é procurado sem diferenciar maiúsculas e acentos: primeiro o nome exato, depois uma correspondência parcial única (`volkswagen` encontra "VW - VolksWagen").
 - O resultado traz um **texto legível** (`content`) e os mesmos dados em **JSON** (`structuredContent`), para programas e assistentes de IA.
 - Erros são devolvidos como resultado com `isError: true` e uma mensagem que explica o problema.
-### 10.1 `listar_marcas`
+### 9.1 `listar_marcas`
  
 Lista as marcas de um tipo de veículo, opcionalmente filtradas. Raramente é necessária, pois as demais ferramentas aceitam o nome da marca.
  
@@ -359,7 +353,7 @@ Marcas de carros com "aston" (1):
 189 – ASTON MARTIN
 ```
  
-### 10.2 `buscar_modelos`
+### 9.2 `buscar_modelos`
  
 Busca os modelos de uma marca cujo nome contenha **todas as palavras** do termo, em qualquer ordem. Devolve no máximo **30 modelos**; se houver mais, informa o total e pede para refinar o termo.
  
@@ -380,7 +374,7 @@ Modelos com "db12":
  
 Quando o limite é atingido, a última linha é, por exemplo, `Exibindo 30 de 87. Refine o termo para ver os demais.`
  
-### 10.3 `listar_anos`
+### 9.3 `listar_anos`
  
 Lista os anos-modelo de um modelo, com o código de cada ano no formato **ano-combustível** (`2024-1`). O ano **32000** é a convenção da FIPE para veículo **0 km** e é exibido como "0 km".
  
@@ -400,7 +394,7 @@ Anos disponíveis para o modelo 11338 (marca aston martin):
 32000-1 – 0 km Gasolina
 ```
  
-### 10.4 `consultar_preco`
+### 9.4 `consultar_preco`
  
 Consulta o preço de um veículo na tabela do mês de referência atual.
  
@@ -422,7 +416,7 @@ Referência: novembro de 2026
  
 No JSON, o preço aparece como número (`valor`) e formatado (`valorFormatado`).
  
-### 10.5 `comparar_veiculos`
+### 9.5 `comparar_veiculos`
  
 Compara os preços de **2 a 5 veículos**, indicando o mais barato, o mais caro e a diferença em reais e em percentual. Um veículo não encontrado não interrompe a comparação: ele é listado como "não consultado".
  
@@ -452,7 +446,7 @@ Mais caro: ...
 Diferença: R$ ... (...% a mais)
 ```
  
-### 10.6 Erros possíveis
+### 9.6 Erros possíveis
  
 Os argumentos passam por duas validações. Primeiro, o SDK do MCP confere a **estrutura** contra o esquema da ferramenta: parâmetros obrigatórios, valores permitidos e quantidade de itens. Depois, o próprio servidor aplica as **regras de negócio** que o esquema não expressa: formato do código do ano, marca ambígua ou inexistente, modelo ou ano que não existe.
  
@@ -473,7 +467,7 @@ Os argumentos passam por duas validações. Primeiro, o SDK do MCP confere a **e
  
 ---
  
-## 11. Testes
+## 10. Testes
  
 | Tipo | Classes | Comando |
 | --- | --- | --- |
@@ -488,15 +482,18 @@ Nenhum teste acessa a internet:
 - **`RelogioAjustavel`** simula a passagem do tempo nos testes de expiração do cache.
 ---
  
-## 12. Possíveis problemas comuns
+## 11. Possíveis problemas comuns
  
 | Sintoma | Causa provável | Solução |
 | --- | --- | --- |
 | `JAR do servidor não encontrado` no cliente | o cliente foi executado fora de `target/dist-client` | execute de dentro dessa pasta ou informe o caminho do servidor como argumento |
 | Servidor não aparece no Claude Desktop | caminho relativo, barras simples no JSON ou `java` fora do `PATH` | use o caminho absoluto, barras duplicadas no Windows e, se preciso, o caminho completo do `java` |
+| Servidor ignorado no Claude Desktop, mesmo com os caminhos certos | `mcpServers` dentro de `preferences` ou JSON inválido | mova o `mcpServers` para o primeiro nível do arquivo e valide o JSON (seção 7) |
 | `CONNECTION_CLOSED` no Claude Code | caminho do jar errado no registro | confira com `claude mcp get tabela-fipe` e registre de novo com o caminho absoluto |
 | `UnsupportedClassVersionError` | o `java` usado é anterior ao 25 | instale o JDK 25 ou use o caminho completo do executável dele |
+| `invalid target release: 25` no build | o Maven está usando um JDK anterior ao 25 | confira a linha `Java version` do `mvn -v` e aponte a variável `JAVA_HOME` para o JDK 25; no Eclipse, selecione o JDK 25 em **Installed JREs** e na aba **JRE** do Maven build |
+| Avisos `WARNING: A restricted method in java.lang.System has been called` no build | emitidos pelo próprio Maven a partir do Java 24 | podem ser ignorados; para ocultá-los no Eclipse, informe `--enable-native-access=ALL-UNNAMED` em **VM arguments** |
 | `NoClassDefFoundError` ao iniciar o servidor | o jar foi copiado sem a pasta `libs/` | copie a pasta `server/` inteira |
+| `docker compose up` falha com erro 500 em `dockerDesktopLinuxEngine` | o Docker Desktop está fechado, ainda iniciando ou no modo de contêineres Windows | abra o Docker Desktop e aguarde **Engine running**; se necessário, use **Switch to Linux containers** ou reinicie o Docker Desktop |
 | Acentos corrompidos no console do Windows | codificação do console | `chcp 65001` antes de executar |
 | `Limite de requisições da API FIPE atingido` | as 500 requisições diárias da API sem token foram usadas | aguarde a renovação diária ou defina `FIPE_TOKEN` |
- 
